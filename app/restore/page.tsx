@@ -133,7 +133,7 @@ export default function RestorePage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* 헤더 */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-16 mb-8 mt-16 ">
           <Button onClick={handleGoHome} variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             홈으로 돌아가기
@@ -143,14 +143,15 @@ export default function RestorePage() {
 
         <div className="space-y-6">
           {/* PKG 파일 업로드 섹션 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">PKG 파일 업로드</h2>
+          
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="w-full max-w-2xl px-4">
             <FileUpload
               onFileSelect={handleFileSelect}
               accept=".pkg"
               maxSize={10 * 1024 * 1024}
             />
-            
+
             {/* 업로드된 파일 정보 표시 */}
             {uploadedFile && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
@@ -159,7 +160,7 @@ export default function RestorePage() {
                 </p>
               </div>
             )}
-            
+
             {/* 에러 메시지 표시 */}
             {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -167,6 +168,8 @@ export default function RestorePage() {
               </div>
             )}
           </div>
+        </div>
+
 
           {/* 복원 설정 섹션 */}
           {uploadedFile && (
