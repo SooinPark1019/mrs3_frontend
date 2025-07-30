@@ -156,7 +156,7 @@ export default function DownscalePage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* 헤더 */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-16 mb-8 mt-16">
           <Button onClick={handleGoHome} variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             홈으로 돌아가기
@@ -167,7 +167,9 @@ export default function DownscalePage() {
         {/* 메인 콘텐츠 */}
         {!imageUrl ? (
           /* 파일 업로드 영역 */
+          <div className="flex items-center justify-center h-[60vh]">
           <FileUpload onFileSelect={handleFileSelect} />
+          </div>
         ) : (
           <div className="space-y-6">
             {/* 다각형 선택 영역 */}

@@ -155,7 +155,8 @@ export default function FileUpload({
       {/* 드래그 앤 드롭 영역 */}
       <div
         className={`
-          relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
+          relative border-2 border-dashed rounded-lg p-12 text-center transition-colors
+    min-h-[20rem] flex flex-col items-center justify-center
           ${isDragOver 
             ? "border-blue-500 bg-blue-50" 
             : "border-gray-300 hover:border-gray-400"
