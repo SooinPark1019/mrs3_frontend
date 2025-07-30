@@ -28,11 +28,12 @@ const BLUR_LEVELS = {
 export default function LandingPage() {
   const hasLoadedOnce = useRef(false)
   const router = useRouter()
+  const NATURE_BACKGROUND_IMG = "/nature-background.jpg";
 
   // 상태 관리
   const [blurLevel, setBlurLevel] = useState<number>(BLUR_LEVELS.DEFAULT) // 배경 블러 레벨
   const [backgroundLoaded, setBackgroundLoaded] = useState(false) // 배경 이미지 로딩 상태
-
+  
   /**
    * 배경 이미지 사전 로딩
    * 페이지 로드 시 배경 이미지를 미리 로드하여 부드러운 전환 효과 제공
@@ -49,7 +50,8 @@ export default function LandingPage() {
     hasLoadedOnce.current = true
     sessionStorage.setItem("bgLoaded", "true") // 한 번 로드되었음을 기록
   }
-  img.src = "/nature-background.jpg"
+  
+  img.src = NATURE_BACKGROUND_IMG;
 }, [])
 
 
@@ -87,16 +89,16 @@ export default function LandingPage() {
   const handleMouseLeave = useCallback(() => {
     setBlurLevel(BLUR_LEVELS.DEFAULT)
   }, [])
-
+  const TRANSITION_DEFAULT = "duration-500 ease-in-out";
   return (
     <div className="relative h-screen w-full overflow-hidden">
       {/* 동적 배경 이미지 (블러 효과 포함) */}
       <div
-        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ease-in-out ${
+        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity ${TRANSITION_DEFAULT} ${
           backgroundLoaded ? "opacity-100" : "opacity-0"
         }`}
         style={{
-          backgroundImage: "url(/nature-background.jpg)",
+          backgroundImage: `url(${NATURE_BACKGROUND_IMG})`,
           filter: `blur(${blurLevel}px)`,
         }}
       />
@@ -105,7 +107,7 @@ export default function LandingPage() {
       {!backgroundLoaded && (
         <div className={`
     absolute inset-0 bg-gradient-to-br from-blue-400 to-black-400
-    transition-opacity duration-500 ease-in-out z-0
+    transition-opacity ${TRANSITION_DEFAULT} z-0
     ${backgroundLoaded ? "opacity-0" : "opacity-100"}
   `} />
       )}
