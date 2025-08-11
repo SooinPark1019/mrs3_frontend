@@ -68,8 +68,13 @@ export default function FileUpload({
     }
 
     // .pkg 파일 확장자 검사 (accept가 ".pkg"인 경우)
-    if (accept === ".pkg" && !file.name.endsWith(".pkg")) {
+    if (accept === ".pkg" && !file.name.toLowerCase().endsWith(".pkg")) {
       return ".pkg 파일만 업로드할 수 있습니다."
+    }
+
+    // .zip 파일 확장자 검사 (accept가 ".zip"인 경우)
+    if (accept === ".zip" && !file.name.toLowerCase().endsWith(".zip")) {
+      return "pkgs.zip 파일만 업로드할 수 있습니다."
     }
 
     // 파일 크기 검사
@@ -134,17 +139,24 @@ export default function FileUpload({
   // 파일 타입에 따른 UI 텍스트 설정
   const isImageUpload = accept === "image/*"
   const isPkgUpload = accept === ".pkg"
+  const isZipUpload = accept === ".zip"
   
   const getUploadText = () => {
     if (isPkgUpload) {
       return {
         title: "PKG 파일을 여기에 드롭하거나 클릭하여 선택하세요",
-        subtitle: `압축된 .pkg 파일만 지원 (최대 ${Math.round(maxSize / (1024 * 1024))}MB)`
+        subtitle: `압축된 .pkg 파일만 지원 (최대 ${Math.round(maxSize / (1024 * 1024))}MB)`,
+      }
+    }
+    if (isZipUpload) {
+      return {
+        title: "pkgs.zip 파일을 여기에 드롭하거나 클릭하여 선택하세요",
+        subtitle: `복원용 pkgs.zip 파일만 지원 (최대 ${Math.round(maxSize / (1024 * 1024))}MB)`,
       }
     }
     return {
       title: "이미지를 여기에 드롭하거나 클릭하여 선택하세요",
-      subtitle: `PNG, JPG, GIF 형식 지원 (최대 ${Math.round(maxSize / (1024 * 1024))}MB)`
+      subtitle: `PNG, JPG, GIF 형식 지원 (최대 ${Math.round(maxSize / (1024 * 1024))}MB)`,
     }
   }
 
