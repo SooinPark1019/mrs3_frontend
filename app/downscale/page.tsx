@@ -11,11 +11,13 @@ import MultiFileUpload from "@/components/multi-file-upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { API_BASE_URL, ENDPOINTS, SCALER_OPTIONS } from "@/lib/constants"
 import { downloadByUrl } from "@/lib/download"
-import type { Point, Polygons } from "@/types/geometry"
+import type { Polygons } from "@/types/geometry"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 /**
  * 이미지 압축 페이지 (단일/일괄)
- * - 단일: 업로드 → 폴리곤 선택 → 배율 선택 → .pkg 반환
+ * - 단일: 업로드 → 폴리곤 선택 → 배율/옵션 선택 → .pkg 반환
  * - 일괄: 여러 이미지 업로드 → 배율 선택 → pkgs.zip 반환
  */
 export default function DownscalePage() {
@@ -29,6 +31,7 @@ export default function DownscalePage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [polygons, setPolygons] = useState<Polygons>([])
   const [scaler, setScaler] = useState<number>(2)
+  const [useImgpresso, setUseImgpresso] = useState<boolean>(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +42,6 @@ export default function DownscalePage() {
   const [batchResultUrl, setBatchResultUrl] = useState<string | null>(null)
   const [batchError, setBatchError] = useState<string | null>(null)
 
-  /** 파일 선택(단일) */
   const handleFileSelect = useCallback((file: File) => {
     setUploadedFile(file)
     const url = URL.createObjectURL(file)
@@ -49,17 +51,14 @@ export default function DownscalePage() {
     setError(null)
   }, [])
 
-  /** 폴리곤 선택 완료(단일) */
   const handlePolygonsComplete = useCallback((newPolygons: Polygons) => {
     setPolygons(newPolygons)
   }, [])
 
-  /** 배율 변경 */
   const handleScalerChange = useCallback((value: string) => {
     setScaler(parseInt(value))
   }, [])
 
-  /** 압축 실행(단일) */
   const handleDownscale = useCallback(async () => {
     if (!uploadedFile || polygons.length === 0) return
 
@@ -74,6 +73,7 @@ export default function DownscalePage() {
         JSON.stringify(polygons.map(poly => poly.map(pt => [Math.round(pt.x), Math.round(pt.y)])))
       )
       formData.append("scaler", scaler.toString())
+      formData.append("use_imgpresso", useImgpresso ? "true" : "false")
 
       const response = await fetch(`${API_BASE_URL}${ENDPOINTS.COMPRESS}`, {
         method: "POST",
@@ -94,29 +94,25 @@ export default function DownscalePage() {
     } finally {
       setIsProcessing(false)
     }
-  }, [uploadedFile, polygons, scaler])
+  }, [uploadedFile, polygons, scaler, useImgpresso])
 
-  /** 결과 .pkg 다운로드 */
   const handleDownload = useCallback(() => {
     if (!resultUrl) return
     downloadByUrl(resultUrl, "compressed-output.pkg")
   }, [resultUrl])
 
-  /** 홈으로 이동 */
   const handleGoHome = useCallback(() => {
     router.push("/")
   }, [router])
 
   const canCompress = uploadedFile && polygons.length > 0 && !isProcessing
 
-  /** 파일 선택(일괄) */
   const handleBatchFiles = useCallback((files: File[]) => {
     setBatchFiles(files)
     setBatchResultUrl(null)
     setBatchError(null)
   }, [])
 
-  /** 일괄 압축 실행 */
   const handleBatchCompress = useCallback(async () => {
     if (batchFiles.length === 0) return
 
@@ -128,6 +124,7 @@ export default function DownscalePage() {
       batchFiles.forEach((f) => formData.append("images", f))
       formData.append("scaler", scaler.toString())
       formData.append("manual", "false") // 항상 false
+      // imgpresso는 일괄 압축에서 미지원 (전송하지 않음)
 
       const response = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTO_BATCH_COMPRESS}`, {
         method: "POST",
@@ -150,7 +147,6 @@ export default function DownscalePage() {
     }
   }, [batchFiles, scaler])
 
-  /** pkgs.zip 다운로드 */
   const handleBatchDownload = useCallback(() => {
     if (!batchResultUrl) return
     downloadByUrl(batchResultUrl, "pkgs.zip")
@@ -180,7 +176,6 @@ export default function DownscalePage() {
 
           {/* 단일 압축 탭 */}
           <TabsContent value="single" className="mt-6 space-y-6">
-            {/* 업로드/그리기 영역 */}
             {!imageUrl ? (
               <div className="flex items-center justify-center h-[60vh]">
                 <FileUpload onFileSelect={handleFileSelect} />
@@ -192,7 +187,6 @@ export default function DownscalePage() {
               </div>
             )}
 
-            {/* 설정 영역: 업로드 전에도 항상 노출 */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-4">압축 설정</h2>
               <div className="space-y-4">
@@ -211,6 +205,13 @@ export default function DownscalePage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* imgpresso 옵션 - 단일 압축만 */}
+                <div className="flex items-center gap-3">
+                  <Switch id="use-imgpresso" checked={useImgpresso} onCheckedChange={setUseImgpresso} />
+                  <Label htmlFor="use-imgpresso" className="text-sm">고압축 (imgpresso 사용)</Label>
+                </div>
+                <p className="text-xs text-gray-500">imgpresso 사용 시 용량이 더 줄어들 수 있으나 처리 시간이 길어질 수 있습니다.</p>
 
                 <div className="flex justify-center">
                   <Button onClick={handleDownscale} disabled={!canCompress} size="lg" className="px-8">
@@ -231,14 +232,12 @@ export default function DownscalePage() {
               </div>
             </div>
 
-            {/* 에러 메시지 */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-700 text-sm">{error}</p>
               </div>
             )}
 
-            {/* 압축 결과 */}
             {resultUrl && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl font-semibold mb-4">압축 결과</h2>
