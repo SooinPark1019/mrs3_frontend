@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import NextImage from "next/image"
 import { Camera, RotateCcw } from "lucide-react"
-
+import { useRouteOverlay } from "./providers/route-overlay";
 
 /**
  * 배경 이미지 블러 설정값
@@ -28,6 +28,7 @@ const BLUR_LEVELS = {
 export default function LandingPage() {
   const hasLoadedOnce = useRef(false)
   const router = useRouter()
+  const { setIsNavigating } = useRouteOverlay();
   const NATURE_BACKGROUND_IMG = "/nature-background.jpg";
 
   // 상태 관리
@@ -55,7 +56,29 @@ export default function LandingPage() {
 }, [])
 
 
-  /**
+// 배경 이미지 로딩 폴백 유지
+useEffect(() => {
+  if (hasLoadedOnce.current || sessionStorage.getItem("bgLoaded") === "true") {
+    setBackgroundLoaded(true)
+    return
+  }
+  const img = new window.Image()
+  img.onload = () => {
+    setBackgroundLoaded(true)
+    hasLoadedOnce.current = true
+    sessionStorage.setItem("bgLoaded", "true")
+  }
+  img.src = NATURE_BACKGROUND_IMG
+}, [])
+
+// ★ 배경이 준비된 '뒤에' 살짝 늦게 오버레이 OFF (페이드 여유)
+useEffect(() => {
+  if (!backgroundLoaded) return
+  const t = setTimeout(() => setIsNavigating(false), 120) // 100~200ms 권장
+  return () => clearTimeout(t)
+}, [backgroundLoaded, setIsNavigating])
+  
+/**
    * 이미지 압축 페이지로 이동
    */
   const handleDownscale = useCallback(() => {

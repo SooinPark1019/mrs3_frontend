@@ -10,6 +10,14 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+    /* 스크롤은 되지만, 스크롤바 UI만 숨김 */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE, Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari, Opera */
+  }
 }
 
 @layer base {
@@ -85,10 +93,14 @@ body {
 }
 
 @layer base {
+  /* ➊ 바디 스크롤 끄기 위해 높이 확정 */
+  html, body { height: 100%; }
   * {
     @apply border-border;
   }
+  /* ➋ body 스크롤 비활성화 + 기존 apply 유지 */
   body {
     @apply bg-background text-foreground;
+    overflow: hidden;   /* ★ 스크롤바/스크롤 자체 OFF */
   }
 }
