@@ -14,6 +14,8 @@ import { downloadByUrl } from "@/lib/download"
 import type { Polygons } from "@/types/geometry"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { useRouteOverlay } from "../providers/route-overlay";
+
 
 /**
  * 이미지 압축 페이지 (단일/일괄)
@@ -101,9 +103,13 @@ export default function DownscalePage() {
     downloadByUrl(resultUrl, "compressed-output.pkg")
   }, [resultUrl])
 
-  const handleGoHome = useCallback(() => {
-    router.push("/")
-  }, [router])
+  const { setIsNavigating } = useRouteOverlay();
+
+const handleGoHome = useCallback(() => {
+  setIsNavigating(true);   // 오버레이 켜기
+  router.push("/");        // 이동 시작
+}, [router, setIsNavigating]);
+
 
   const canCompress = uploadedFile && polygons.length > 0 && !isProcessing
 
@@ -153,7 +159,7 @@ export default function DownscalePage() {
   }, [batchResultUrl])
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="h-screen bg-gray-50 py-8 overflow-y-auto no-scrollbar">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* 헤더: 타이틀 중앙 정렬, 뒤로가기 버튼 좌측 고정 */}
         <div className="relative mb-8 mt-16">
@@ -175,17 +181,21 @@ export default function DownscalePage() {
           </TabsList>
 
           {/* 단일 압축 탭 */}
-          <TabsContent value="single" className="mt-6 space-y-6">
+          <TabsContent value="single" className="mt-6">
+            <div className="space-y-6">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">이미지 업로드</h2>
             {!imageUrl ? (
-              <div className="flex items-center justify-center h-[60vh]">
+              
                 <FileUpload onFileSelect={handleFileSelect} />
-              </div>
+              
             ) : (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl font-semibold mb-4">다각형 영역 선택</h2>
                 <PolygonDrawer imageUrl={imageUrl} onPolygonComplete={handlePolygonsComplete} />
               </div>
             )}
+            </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-4">압축 설정</h2>
@@ -226,7 +236,7 @@ export default function DownscalePage() {
                   </Button>
                 </div>
 
-                {!uploadedFile && (
+                {(!uploadedFile || polygons.length === 0)&& (
                   <p className="text-xs text-gray-500 text-center">이미지를 업로드하고 영역을 선택해야 압축을 시작할 수 있습니다.</p>
                 )}
               </div>
@@ -261,6 +271,7 @@ export default function DownscalePage() {
                 </div>
               </div>
             )}
+            </div>
           </TabsContent>
 
           {/* 일괄 압축 탭 */}
@@ -302,6 +313,9 @@ export default function DownscalePage() {
                       )}
                     </Button>
                   </div>
+                  {batchFiles.length === 0 && (
+                  <p className="text-xs text-gray-500 text-center">이미지를 업로드해야 압축을 시작할 수 있습니다.</p>
+                )}
                 </div>
               </div>
 
