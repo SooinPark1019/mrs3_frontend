@@ -145,10 +145,10 @@ useEffect(() => {
           <h1 className="text-8xl font-bold mb-6 [text-shadow:0_0_8px_rgba(0,0,0,0.5)]">
   MRS3</h1>
           <p className="text-2xl font-medium mb-2 [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-            다각형 영역 기반 이미지 압축 시스템
+            다중 해상도 선택 압축 및 초해상도 기반 복원 시스템
           </p>
           <p className="text-lg opacity-90 [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-            Multi-Region Selective Super-resolution System
+            Multiple Resolution Selective compression & Super-resolution based restoring System
           </p>
         </div>
 
