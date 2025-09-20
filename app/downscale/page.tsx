@@ -36,6 +36,8 @@ export default function DownscalePage() {
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [singleStats, setSingleStats] = useState<{ before: number; after: number; ratio: number } | null>(null)
+  const [singleDims, setSingleDims] = useState<{ w: number; h: number } | null>(null)
+  const [allowedScalersSingle, setAllowedScalersSingle] = useState<string[]>(SCALER_OPTIONS.map(o => o.value))
 
   // 일괄 압축 상태
   const [batchFiles, setBatchFiles] = useState<File[]>([])
@@ -43,6 +45,7 @@ export default function DownscalePage() {
   const [batchResultUrl, setBatchResultUrl] = useState<string | null>(null)
   const [batchError, setBatchError] = useState<string | null>(null)
   const [batchStats, setBatchStats] = useState<{ before: number; after: number; ratio: number } | null>(null)
+  const [allowedScalersBatch, setAllowedScalersBatch] = useState<string[]>(SCALER_OPTIONS.map(o => o.value))
 
   // Helper: bytes → human readable
   const formatBytes = (bytes: number) => {
@@ -54,7 +57,33 @@ export default function DownscalePage() {
     return `${value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${sizes[i]}`
   }
 
-  const handleFileSelect = useCallback((file: File) => {
+  // Helper: 이미지 파일에서 (w,h) 구하기
+  const getImageDims = (fileOrUrl: File | string): Promise<{ w: number; h: number; url?: string }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const src = typeof fileOrUrl === "string" ? fileOrUrl : URL.createObjectURL(fileOrUrl)
+      img.onload = () => {
+        const w = img.naturalWidth
+        const h = img.naturalHeight
+        resolve({ w, h, url: src })
+        if (typeof fileOrUrl !== "string") {
+          URL.revokeObjectURL(src)
+        }
+      }
+      img.onerror = reject
+      img.src = src
+    })
+  }
+
+  // Helper: (w,h)에서 가능한 배율만 필터링
+  const filterAllowedScalers = (w: number, h: number): string[] => {
+    return SCALER_OPTIONS.map(o => o.value).filter(v => {
+      const s = parseInt(v)
+      return w % s === 0 && h % s === 0
+    })
+  }
+
+  const handleFileSelect = useCallback(async (file: File) => {
     setUploadedFile(file)
     const url = URL.createObjectURL(file)
     setImageUrl(url)
@@ -62,7 +91,19 @@ export default function DownscalePage() {
     setResultUrl(null)
     setError(null)
     setSingleStats(null)
-  }, [])
+
+    try {
+      const { w, h } = await getImageDims(url)
+      setSingleDims({ w, h })
+      const allowed = filterAllowedScalers(w, h)
+      setAllowedScalersSingle(allowed)
+      if (!allowed.includes(String(scaler))) {
+        setScaler(parseInt(allowed[0] || "2"))
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [scaler])
 
   const handlePolygonsComplete = useCallback((newPolygons: Polygons) => {
     setPolygons(newPolygons)
@@ -126,12 +167,34 @@ export default function DownscalePage() {
 
   const canCompress = uploadedFile && polygons.length > 0 && !isProcessing
 
-  const handleBatchFiles = useCallback((files: File[]) => {
+  const handleBatchFiles = useCallback(async (files: File[]) => {
     setBatchFiles(files)
     setBatchResultUrl(null)
     setBatchError(null)
     setBatchStats(null)
-  }, [])
+
+    if (files.length === 0) {
+      setAllowedScalersBatch(SCALER_OPTIONS.map(o => o.value))
+      return
+    }
+
+    try {
+      // 모든 이미지의 (w,h)를 읽어 공통 약수만 허용
+      const dims = await Promise.all(files.map(f => getImageDims(f)))
+      let allowed: string[] = SCALER_OPTIONS.map(o => o.value)
+      for (const d of dims) {
+        const cur = filterAllowedScalers(d.w, d.h)
+        allowed = allowed.filter(v => cur.includes(v))
+      }
+      setAllowedScalersBatch(allowed)
+      // 현재 선택된 배율이 불가하면 자동 조정
+      if (!allowed.includes(String(scaler)) && allowed.length > 0) {
+        setScaler(parseInt(allowed[0]))
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [scaler])
 
   const handleBatchCompress = useCallback(async () => {
     if (batchFiles.length === 0) return
@@ -222,13 +285,16 @@ export default function DownscalePage() {
                       <SelectValue placeholder="배율 선택" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SCALER_OPTIONS.map((option) => (
+                      {SCALER_OPTIONS.filter(o => allowedScalersSingle.includes(o.value)).map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {singleDims && (
+                    <p className="text-xs text-gray-500 mt-1">허용 배율: {allowedScalersSingle.join(", ") || "없음"} (이미지 {singleDims.w}×{singleDims.h})</p>
+                  )}
                 </div>
 
                 {/* imgpresso 옵션 - 단일 압축만 */}
@@ -239,7 +305,7 @@ export default function DownscalePage() {
                 <p className="text-xs text-gray-500">imgpresso 사용 시 용량이 더 줄어들 수 있으나 처리 시간이 길어질 수 있습니다.</p>
 
                 <div className="flex justify-center">
-                  <Button onClick={handleDownscale} disabled={!canCompress} size="lg" className="px-8">
+                  <Button onClick={handleDownscale} disabled={!canCompress || allowedScalersSingle.length === 0} size="lg" className="px-8">
                     {isProcessing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -314,17 +380,18 @@ export default function DownscalePage() {
                         <SelectValue placeholder="배율 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SCALER_OPTIONS.map((option) => (
+                        {SCALER_OPTIONS.filter(o => allowedScalersBatch.includes(o.value)).map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">허용 배율(모든 이미지 공통): {allowedScalersBatch.join(", ") || "없음"}</p>
                   </div>
 
                   <div className="flex justify-center">
-                    <Button onClick={handleBatchCompress} disabled={isBatchProcessing || batchFiles.length === 0} size="lg" className="px-8">
+                    <Button onClick={handleBatchCompress} disabled={isBatchProcessing || batchFiles.length === 0 || allowedScalersBatch.length === 0} size="lg" className="px-8">
                       {isBatchProcessing ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -345,7 +412,7 @@ export default function DownscalePage() {
               )}
 
               {batchResultUrl && (
-                <div className="bg-white rounded-lg p-6 shadow-sm">
+                <div className="bg-white rounded-lg p-6 shadow_sm">
                   <h2 className="text-xl font-semibold mb-4">일괄 압축 결과</h2>
                   <div className="space-y-4">
                     <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
