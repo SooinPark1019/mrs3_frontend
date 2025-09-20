@@ -9,6 +9,8 @@ import FileUpload from "@/components/file-upload"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { API_BASE_URL, ENDPOINTS, MRS3_MODE_OPTIONS } from "@/lib/constants"
 import { downloadByUrl } from "@/lib/download"
+import { useRouteOverlay } from "../providers/route-overlay";
+
 
 /**
  * 이미지 복원 페이지 (단일/일괄)
@@ -89,10 +91,12 @@ export default function RestorePage() {
     downloadByUrl(resultUrl, "restored-image.png")
   }, [resultUrl])
 
-  /** 홈으로 이동 */
+  const { setIsNavigating } = useRouteOverlay();
+  
   const handleGoHome = useCallback(() => {
-    router.push("/")
-  }, [router])
+    setIsNavigating(true);   // 오버레이 켜기
+    router.push("/");        // 이동 시작
+  }, [router, setIsNavigating]);
 
   // 일괄 복원 핸들러들
   const handleZipSelect = useCallback((file: File) => {
@@ -149,7 +153,7 @@ export default function RestorePage() {
   )?.description || ""
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="h-screen bg-gray-50 py-8 overflow-y-auto no-scrollbar">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* 헤더: 타이틀 중앙 정렬, 뒤로가기 버튼 좌측 고정 */}
         <div className="relative mb-8 mt-16 ">
@@ -171,10 +175,12 @@ export default function RestorePage() {
           </TabsList>
 
           {/* 단일 복원 탭 */}
-          <TabsContent value="single" className="mt-6 space-y-6">
+          <TabsContent value="single" className="mt-6">
             {/* 업로드 영역 */}
-            <div className="flex items-center justify-center h-[40vh]">
-              <div className="w-full max-w-2xl px-4">
+            <div className="space-y-6">
+              
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">.pkg 업로드</h2>
                 <FileUpload onFileSelect={handleFileSelect} accept=".pkg" maxSize={10 * 1024 * 1024} />
 
                 {uploadedFile && (
@@ -188,8 +194,9 @@ export default function RestorePage() {
                     <p className="text-sm text-red-700">{error}</p>
                   </div>
                 )}
-              </div>
-            </div>
+                </div>
+              
+            
 
             {/* 설정 영역: 업로드 전에도 항상 노출 */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -248,6 +255,7 @@ export default function RestorePage() {
                 </div>
               </div>
             )}
+          </div>
           </TabsContent>
 
           {/* 일괄 복원 탭 */}
@@ -284,6 +292,7 @@ export default function RestorePage() {
                           </SelectItem>
                         ))}
                       </SelectContent>
+                      <p className="text-xs text-gray-500 mt-1">{selectedModeDescription}{mrs3Mode === -1 && " - 처리 시간이 오래 걸릴 수 있습니다."}</p>
                     </Select>
                   </div>
 
@@ -299,6 +308,9 @@ export default function RestorePage() {
                       )}
                     </Button>
                   </div>
+                  {!uploadedFile && (
+                  <p className="text-xs text-gray-500 text-center">pkgs.zip 파일을 업로드해야 복원을 시작할 수 있습니다.</p>
+                )}
                 </div>
               </div>
 

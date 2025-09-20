@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import NextImage from "next/image"
 import { Camera, RotateCcw } from "lucide-react"
-
+import { useRouteOverlay } from "./providers/route-overlay";
 
 /**
  * 배경 이미지 블러 설정값
@@ -28,6 +28,7 @@ const BLUR_LEVELS = {
 export default function LandingPage() {
   const hasLoadedOnce = useRef(false)
   const router = useRouter()
+  const { setIsNavigating } = useRouteOverlay();
   const NATURE_BACKGROUND_IMG = "/nature-background.jpg";
 
   // 상태 관리
@@ -55,7 +56,29 @@ export default function LandingPage() {
 }, [])
 
 
-  /**
+// 배경 이미지 로딩 폴백 유지
+useEffect(() => {
+  if (hasLoadedOnce.current || sessionStorage.getItem("bgLoaded") === "true") {
+    setBackgroundLoaded(true)
+    return
+  }
+  const img = new window.Image()
+  img.onload = () => {
+    setBackgroundLoaded(true)
+    hasLoadedOnce.current = true
+    sessionStorage.setItem("bgLoaded", "true")
+  }
+  img.src = NATURE_BACKGROUND_IMG
+}, [])
+
+// ★ 배경이 준비된 '뒤에' 살짝 늦게 오버레이 OFF (페이드 여유)
+useEffect(() => {
+  if (!backgroundLoaded) return
+  const t = setTimeout(() => setIsNavigating(false), 120) // 100~200ms 권장
+  return () => clearTimeout(t)
+}, [backgroundLoaded, setIsNavigating])
+  
+/**
    * 이미지 압축 페이지로 이동
    */
   const handleDownscale = useCallback(() => {
@@ -122,10 +145,10 @@ export default function LandingPage() {
           <h1 className="text-8xl font-bold mb-6 [text-shadow:0_0_8px_rgba(0,0,0,0.5)]">
   MRS3</h1>
           <p className="text-2xl font-medium mb-2 [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-            다각형 영역 기반 이미지 압축 시스템
+            다중 해상도 선택 압축 및 초해상도 기반 복원 시스템
           </p>
           <p className="text-lg opacity-90 [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
-            Multi-Region Selective Super-resolution System
+            Multiple Resolution Selective compression & Super-resolution based restoring System
           </p>
         </div>
 
