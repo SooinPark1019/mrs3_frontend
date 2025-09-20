@@ -131,20 +131,7 @@ export default function LandingPage() {
 
         {/* 기능 카드 및 버튼 영역 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 mt-20">
-          {/* 이미지 복원 기능 카드 */}
-          <div 
-            onClick={handleRestore}
-            onMouseEnter={handleRestoreHover}
-            onMouseLeave={handleMouseLeave}
-            className="cursor-pointer bg-white/10 hover:bg-white/20 transition duration-200 transform hover:scale-105 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <RotateCcw className="h-8 w-8 mb-4 text-green-300" />
-            <h3 className="text-xl font-semibold mb-2">이미지 복원</h3>
-            <p className="text-sm opacity-90">
-              AI 기반 EDSR 또는 OpenCV로 고품질 이미지 복원을 제공합니다.
-            </p>
-          </div>
-
-          {/* 이미지 압축 기능 카드 */}
+          {/* 이미지 압축 기능 카드 (좌측) */}
           <div
             onClick={handleDownscale}
             onMouseEnter={handleDownscaleHover}
@@ -154,6 +141,19 @@ export default function LandingPage() {
             <h3 className="text-xl font-semibold mb-2">이미지 압축</h3>
             <p className="text-sm opacity-90">
               다각형 영역을 선택하여 스마트한 이미지 압축을 수행합니다.
+            </p>
+          </div>
+
+          {/* 이미지 복원 기능 카드 (우측) */}
+          <div 
+            onClick={handleRestore}
+            onMouseEnter={handleRestoreHover}
+            onMouseLeave={handleMouseLeave}
+            className="cursor-pointer bg-white/10 hover:bg-white/20 transition duration-200 transform hover:scale-105 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <RotateCcw className="h-8 w-8 mb-4 text-green-300" />
+            <h3 className="text-xl font-semibold mb-2">이미지 복원</h3>
+            <p className="text-sm opacity-90">
+              AI 기반 EDSR 또는 OpenCV로 고품질 이미지 복원을 제공합니다.
             </p>
           </div>
           
