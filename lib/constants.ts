@@ -3,7 +3,7 @@
  * - 프론트 전역에서 재사용되는 API URL, 엔드포인트, 선택 옵션 등을 제공합니다.
  * - 환경 변수: NEXT_PUBLIC_API_BASE_URL (예: http://localhost:8000)
  */
-export const API_BASE_URL =  "https://4ca11279e730.ngrok-free.app"
+export const API_BASE_URL =  "https://d2b15b402e68.ngrok-free.app"
 
 // 백엔드 엔드포인트
 export const ENDPOINTS = {
